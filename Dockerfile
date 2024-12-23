@@ -6,12 +6,16 @@ USER root
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
+    python3-venv \
     git \
     curl \
     wget \
     unzip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Υποβάθμιση του pip σε έκδοση 22.2.2 (προαιρετικό, αν χρειαστεί)
+# RUN pip3 install --upgrade pip==22.2.2
 
 # Εγκατάσταση Node.js 14.x από επίσημο tarball
 RUN curl -fsSL https://nodejs.org/dist/v14.21.3/node-v14.21.3-linux-x64.tar.xz | tar -xJ -C /usr/local --strip-components=1 && \
@@ -22,15 +26,20 @@ RUN curl -fsSL https://nodejs.org/dist/v14.21.3/node-v14.21.3-linux-x64.tar.xz |
 # Εγκατάσταση global npm packages
 RUN npm install -g eslint
 
-# Εγκατάσταση Python εργαλεία
-RUN pip3 install bandit sqlmap pylint
+# Δημιουργία εικονικού περιβάλλοντος
+RUN python3 -m venv /opt/venv
+
+# Ενεργοποίηση του εικονικού περιβάλλοντος και εγκατάσταση Python πακέτων
+RUN /opt/venv/bin/pip install --upgrade pip && \
+    /opt/venv/bin/pip install bandit sqlmap pylint
 
 # Εγκατάσταση SonarScanner
 RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip && \
     unzip sonar-scanner-cli-4.7.0.2747-linux.zip -d /opt && \
     rm sonar-scanner-cli-4.7.0.2747-linux.zip
 
-ENV PATH="/opt/sonar-scanner-4.7.0.2747-linux/bin:${PATH}"
+# Προσθήκη SonarScanner και του εικονικού περιβάλλοντος στο PATH
+ENV PATH="/opt/sonar-scanner-4.7.0.2747-linux/bin:/opt/venv/bin:${PATH}"
 
 USER jenkins
 
