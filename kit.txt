@@ -1,0 +1,160 @@
+1. Δημιουργία Fork στο GitHub
+Πήγαμε στο GitHub Repository και δημιουργήσαμε ένα fork.
+Κλωνοποιήσαμε το fork στο τοπικό μας σύστημα:
+bash
+Copy code
+git clone https://github.com/<YourUsername>/TransferRepresentationLearning.git
+cd TransferRepresentationLearning
+2. Ρύθμιση Jenkins
+Εγκαταστήσαμε το Jenkins και βεβαιωθήκαμε ότι λειτουργεί:
+
+bash
+Copy code
+sudo apt-get update
+sudo apt-get install -y openjdk-11-jdk
+wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+sudo apt-get update
+sudo apt-get install -y jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+Αντιγράψαμε τον κωδικό αρχικής πρόσβασης:
+
+bash
+Copy code
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+Προσθέσαμε plugins στο Jenkins και δημιουργήσαμε ένα pipeline project.
+
+3. Δημιουργία Docker περιβάλλοντος
+Εγκαταστήσαμε Docker και Docker Compose:
+
+bash
+Copy code
+sudo apt-get update
+sudo apt-get install -y docker.io
+sudo apt-get install -y docker-compose
+sudo systemctl start docker
+sudo systemctl enable docker
+docker --version
+Δημιουργήσαμε το αρχείο docker-compose.yml:
+
+yaml
+Copy code
+version: '3.8'
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    container_name: jenkins
+
+  mock_api:
+    build:
+      context: .
+      dockerfile: Dockerfile-api
+    ports:
+      - "5000:8080"
+    container_name: mock_api
+
+volumes:
+  jenkins_home:
+4. Δημιουργία Dockerfiles
+Dockerfile για Jenkins:
+dockerfile
+Copy code
+FROM jenkins/jenkins:lts
+USER root
+RUN apt-get update && apt-get install -y python3 python3-pip
+RUN pip install bandit --break-system-packages
+USER jenkins
+Dockerfile για Mock API:
+dockerfile
+Copy code
+FROM python:3.9-slim
+WORKDIR /app
+COPY app.py /app/
+RUN pip install flask
+CMD ["python", "app.py"]
+5. Δημιουργία Mock API
+Δημιουργήσαμε το αρχείο app.py για το Mock API:
+
+python
+Copy code
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/example_endpoint', methods=['GET', 'POST'])
+def example_endpoint():
+    user_input = request.args.get('input')
+    return f"Received: {user_input}"
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8080)
+Ξεκινήσαμε το Docker Compose:
+
+bash
+Copy code
+docker-compose build
+docker-compose up -d
+6. Δημιουργία Jenkins Pipeline
+Δημιουργήσαμε ένα αρχείο Jenkinsfile:
+
+groovy
+Copy code
+pipeline {
+    agent any
+    stages {
+        stage('Checkout Code') {
+            steps {
+                echo 'Checking out code...'
+                checkout scm
+            }
+        }
+        stage('Static Analysis') {
+            steps {
+                echo 'Running static analysis...'
+                sh '''
+                bandit -r . || true
+                '''
+            }
+        }
+        stage('Dynamic Analysis') {
+            steps {
+                echo 'Running dynamic analysis...'
+                sh '''
+                sqlmap -u "http://mock_api:8080/example_endpoint?input=test" --batch
+                '''
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Pipeline completed. Review all results!'
+        }
+    }
+}
+Κάναμε commit και push στο repository:
+
+bash
+Copy code
+git add Jenkinsfile
+git commit -m "Added Jenkinsfile for pipeline."
+git push origin main
+Εκτελέσαμε το pipeline στο Jenkins και επιβεβαιώσαμε τα αποτελέσματα.
+
+7. Στατικός Έλεγχος με Bandit
+Εκτελέσαμε το Bandit για ανίχνευση ευπαθειών στον Python κώδικα:
+bash
+Copy code
+bandit -r .
+8. Δυναμικός Έλεγχος με SQLmap
+Εκτελέσαμε το SQLmap για ανίχνευση SQL injections:
+bash
+Copy code
+sqlmap -u "http://mock_api:8080/example_endpoint?input=test" --batch
