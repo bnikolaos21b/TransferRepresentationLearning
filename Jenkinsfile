@@ -12,13 +12,11 @@ pipeline {
         }
         stage('Secret Detection') {
             steps {
-                script {
-                    try {
-                        sh 'docker run --rm -v $(pwd):/app trufflesecurity/trufflehog:latest python -m trufflehog /app'
-                    } catch (Exception e) {
-                        echo "Secret detection failed: ${e.getMessage()}"
-                    }
-                }
+                echo 'Running secret detection with TruffleHog...'
+                sh '''
+                docker run --rm -v $(pwd):/app trufflesecurity/trufflehog:latest github --repo /app --json > trufflehog_results.json
+                '''
+                publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: '.', reportFiles: 'trufflehog_results.json', reportName: 'TruffleHog Report'])
             }
         }
         stage('Linting and Static Analysis') {
@@ -27,8 +25,7 @@ pipeline {
                     steps {
                         echo 'Running Pylint...'
                         sh '''
-                        docker run --rm -v $(pwd):/app python:3.9-slim pip install pylint
-                        docker run --rm -v $(pwd):/app python:3.9-slim pylint /app/**/*.py
+                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app/**/*.py"
                         '''
                     }
                 }
@@ -36,7 +33,7 @@ pipeline {
                     steps {
                         echo 'Running ESLint...'
                         sh '''
-                        docker run --rm -v $(pwd):/app node:14-alpine sh -c "npm install eslint && eslint /app/**/*.js"
+                        docker run --rm -v $(pwd):/app node:18-alpine sh -c "npm install -g eslint && eslint /app/**/*.js"
                         '''
                     }
                 }
