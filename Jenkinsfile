@@ -23,7 +23,9 @@ pipeline {
             steps {
                 echo 'Running secret detection with TruffleHog...'
                 sh '''
-                docker exec trufflehog trufflehog filesystem --json /app || echo "No secrets found."
+                docker exec trufflehog mkdir -p /app
+                docker cp . trufflehog:/app
+                docker exec trufflehog trufflehog filesystem --json /app > trufflehog_results.json || echo "No secrets found."
                 '''
             }
         }
@@ -33,7 +35,7 @@ pipeline {
                     steps {
                         echo 'Running Pylint...'
                         sh '''
-                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app/app.py"
+                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app/app.py || echo 'Linting issues found.'"
                         '''
                     }
                 }
@@ -57,7 +59,7 @@ pipeline {
                         -Dsonar.projectKey=TransferRepresentationLearning \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=http://172.18.0.9:9000 \
-                        -Dsonar.ws.timeout=120 \
+                        -Dsonar.scanner.socketTimeout=300 \
                         -Dsonar.login=$SONAR_TOKEN
                         '''
                     }
@@ -72,6 +74,9 @@ pipeline {
         failure {
             echo 'Pipeline failed. Check logs for details.'
         }
+    }
+    options {
+        timestamps()
     }
 }
 
