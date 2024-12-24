@@ -35,7 +35,7 @@ pipeline {
                     steps {
                         echo 'Running Pylint...'
                         sh '''
-                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app.py || echo 'Linting issues found.'"
+                        docker run --rm -v $(pwd):/src python:3.9-slim sh -c "pip install pylint && pylint /src/app.py || echo 'Linting issues found.'"
                         '''
                     }
                 }
@@ -43,7 +43,7 @@ pipeline {
                     steps {
                         echo 'Running ESLint...'
                         sh '''
-                        docker run --rm -v $(pwd):/app node:18-alpine sh -c "npm install -g eslint && (ls /app/*.js && eslint /app/*.js || echo 'No JavaScript files found.')"
+                        docker run --rm -v $(pwd):/src node:18-alpine sh -c "npm install -g eslint && (ls /src/*.js && eslint /src/*.js || echo 'No JavaScript files found.')"
                         '''
                     }
                 }
@@ -52,13 +52,13 @@ pipeline {
                         echo 'Running SonarQube analysis...'
                         sh '''
                         docker run --rm \
-                        -e SONAR_HOST_URL="http://172.18.0.9:9000" \
+                        -e SONAR_HOST_URL="http://sonarqube:9000" \
                         -e SONAR_LOGIN="$SONAR_TOKEN" \
                         -v $(pwd):/usr/src \
                         sonarsource/sonar-scanner-cli \
                         -Dsonar.projectKey=TransferRepresentationLearning \
                         -Dsonar.sources=. \
-                        -Dsonar.host.url=http://172.18.0.9:9000 \
+                        -Dsonar.host.url=http://sonarqube:9000 \
                         -Dsonar.scanner.socketTimeout=300 \
                         -Dsonar.ws.timeout=300 \
                         -Dsonar.login=$SONAR_TOKEN
