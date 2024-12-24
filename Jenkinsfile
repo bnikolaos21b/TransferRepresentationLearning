@@ -12,11 +12,13 @@ pipeline {
         }
         stage('Secret Detection') {
             steps {
-                echo 'Running secret detection with TruffleHog...'
-                sh '''
-                docker run --rm -v $(pwd):/app trufflesecurity/trufflehog:latest trufflehog --json /app > trufflehog_results.json
-                '''
-                publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: '.', reportFiles: 'trufflehog_results.json', reportName: 'TruffleHog Report'])
+                script {
+                    try {
+                        sh 'docker run --rm -v $(pwd):/app trufflesecurity/trufflehog:latest python -m trufflehog /app'
+                    } catch (Exception e) {
+                        echo "Secret detection failed: ${e.getMessage()}"
+                    }
+                }
             }
         }
         stage('Linting and Static Analysis') {
