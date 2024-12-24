@@ -14,44 +14,45 @@ pipeline {
             steps {
                 echo 'Running secret detection with TruffleHog...'
                 sh '''
+                docker cp . trufflehog:/app
                 docker exec trufflehog trufflehog filesystem --json /app > trufflehog_results.json
                 '''
             }
         }
         stage('Linting and Static Analysis') {
             parallel {
-                stage('Python Linting') {
-                    steps {
-                        echo 'Running Pylint...'
+		stage('Python Linting') {
+		    steps {
+			echo 'Running Pylint...'
 			sh '''
-			docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && python -m pylint /app/*.py"
+			docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && python -m pylint /app/app.py"
 			'''
-                    }
-                }
-                stage('JavaScript Linting') {
-                    steps {
-                        echo 'Running ESLint...'
+		    }
+		}
+		stage('JavaScript Linting') {
+		    steps {
+			echo 'Running ESLint...'
 			sh '''
-			docker run --rm -v $(pwd):/app node:18-alpine sh -c "npm install -g eslint && (eslint /app/*.js || echo 'No JS files found.')"
+			docker run --rm -v $(pwd):/app node:18-alpine sh -c "npm install -g eslint && (ls /app/*.js && eslint /app/*.js || echo 'No JavaScript files found.')"
 			'''
-                    }
-                }
-                stage('SonarQube Analysis') {
-                    steps {
-                        echo 'Running SonarQube analysis...'
-                        sh '''
-                        docker run --rm \
-                        -e SONAR_HOST_URL="http://-Dsonar.host.url=http://172.18.0.9:9000:9000" \
-                        -e SONAR_LOGIN="$SONAR_TOKEN" \
-                        -v $(pwd):/usr/src \
-                        sonarsource/sonar-scanner-cli \
-                        -Dsonar.projectKey=TransferRepresentationLearning \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://<sonarqube-ip>:9000 \
-                        -Dsonar.login=$SONAR_TOKEN
-                        '''
-                    }
-                }
+		    }
+		}
+		stage('SonarQube Analysis') {
+		    steps {
+			echo 'Running SonarQube analysis...'
+			sh '''
+			docker run --rm \
+			-e SONAR_HOST_URL="http://172.18.0.9:9000" \
+			-e SONAR_LOGIN="$SONAR_TOKEN" \
+			-v $(pwd):/usr/src \
+			sonarsource/sonar-scanner-cli \
+			-Dsonar.projectKey=TransferRepresentationLearning \
+			-Dsonar.sources=. \
+			-Dsonar.host.url=http://172.18.0.9:9000 \
+			-Dsonar.login=$SONAR_TOKEN
+			'''
+		    }
+		}
             }
         }
         stage('OWASP ZAP Scan') {
