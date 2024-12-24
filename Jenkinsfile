@@ -35,7 +35,7 @@ pipeline {
                     steps {
                         echo 'Running Pylint...'
                         sh '''
-                        docker run --rm -v $(pwd):/src python:3.9-slim sh -c "pip install pylint && pylint /src/app.py || echo 'Linting issues found.'"
+                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app/app.py || echo 'Linting issues found.'"
                         '''
                     }
                 }
@@ -52,7 +52,7 @@ pipeline {
                         echo 'Running SonarQube analysis...'
                         sh '''
                         docker run --rm \
-                        -e SONAR_HOST_URL="http://sonarqube:9000" \
+                        -e SONAR_HOST_URL=http://sonarqube:9000
                         -e SONAR_LOGIN="$SONAR_TOKEN" \
                         -v $(pwd):/usr/src \
                         sonarsource/sonar-scanner-cli \
