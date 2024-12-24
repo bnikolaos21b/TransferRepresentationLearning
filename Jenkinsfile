@@ -14,7 +14,7 @@ pipeline {
             steps {
                 echo 'Running secret detection with TruffleHog...'
                 sh '''
-                docker exec trufflehog trufflehog filesystem --json /app > trufflehog_results.json || echo "No secrets found."
+                docker exec trufflehog trufflehog filesystem --json /app > trufflehog_results.json
                 '''
             }
         }
@@ -23,17 +23,17 @@ pipeline {
                 stage('Python Linting') {
                     steps {
                         echo 'Running Pylint...'
-                        sh '''
-                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app/**/*.py || pylint /app/*.py"
-                        '''
+			sh '''
+			docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && python -m pylint /app/*.py"
+			'''
                     }
                 }
                 stage('JavaScript Linting') {
                     steps {
                         echo 'Running ESLint...'
-                        sh '''
-                        docker run --rm -v $(pwd):/app node:18-alpine sh -c "npm install -g eslint && eslint /app/*.js || echo 'No JS files found.'"
-                        '''
+			sh '''
+			docker run --rm -v $(pwd):/app node:18-alpine sh -c "npm install -g eslint && (eslint /app/*.js || echo 'No JS files found.')"
+			'''
                     }
                 }
                 stage('SonarQube Analysis') {
@@ -41,7 +41,7 @@ pipeline {
                         echo 'Running SonarQube analysis...'
                         sh '''
                         docker run --rm \
-                        -e SONAR_HOST_URL="http://<sonarqube-ip>:9000" \
+                        -e SONAR_HOST_URL="http://-Dsonar.host.url=http://172.18.0.9:9000:9000" \
                         -e SONAR_LOGIN="$SONAR_TOKEN" \
                         -v $(pwd):/usr/src \
                         sonarsource/sonar-scanner-cli \
