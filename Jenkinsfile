@@ -35,7 +35,7 @@ pipeline {
                     steps {
                         echo 'Running Pylint...'
                         sh '''
-                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app/app.py || echo 'Linting issues found.'"
+                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app.py || echo 'Linting issues found.'"
                         '''
                     }
                 }
@@ -60,6 +60,7 @@ pipeline {
                         -Dsonar.sources=. \
                         -Dsonar.host.url=http://172.18.0.9:9000 \
                         -Dsonar.scanner.socketTimeout=300 \
+                        -Dsonar.ws.timeout=300 \
                         -Dsonar.login=$SONAR_TOKEN
                         '''
                     }
