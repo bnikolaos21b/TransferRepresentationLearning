@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        SONAR_TOKEN = credentials('sonarqube-token')
+        SONAR_TOKEN = credentials('sonarqube-token') // Βεβαιωθείτε ότι αυτό είναι σωστά ρυθμισμένο στο Jenkins
     }
     stages {
         stage('Checkout Code') {
@@ -52,15 +52,13 @@ pipeline {
                         echo 'Running SonarQube analysis...'
                         sh '''
                         docker run --rm \
-                        -e SONAR_HOST_URL=http://sonarqube:9000
+                        -e SONAR_HOST_URL="http://sonarqube:9000" \
                         -e SONAR_LOGIN="$SONAR_TOKEN" \
                         -v $(pwd):/usr/src \
                         sonarsource/sonar-scanner-cli \
                         -Dsonar.projectKey=TransferRepresentationLearning \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=http://sonarqube:9000 \
-                        -Dsonar.scanner.socketTimeout=300 \
-                        -Dsonar.ws.timeout=300 \
                         -Dsonar.login=$SONAR_TOKEN
                         '''
                     }
