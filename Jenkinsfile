@@ -14,7 +14,7 @@ pipeline {
             steps {
                 echo 'Running secret detection with TruffleHog...'
                 sh '''
-                docker run --rm -v $(pwd):/app trufflesecurity/trufflehog:latest github --repo /app --json > trufflehog_results.json
+                docker run --rm -v $(pwd):/app trufflesecurity/trufflehog:latest filesystem --json /app > trufflehog_results.json
                 '''
                 publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: '.', reportFiles: 'trufflehog_results.json', reportName: 'TruffleHog Report'])
             }
@@ -25,7 +25,7 @@ pipeline {
                     steps {
                         echo 'Running Pylint...'
                         sh '''
-                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && pylint /app/**/*.py"
+                        docker run --rm -v $(pwd):/app python:3.9-slim sh -c "pip install pylint && python -m pylint /app/**/*.py"
                         '''
                     }
                 }
