@@ -4,6 +4,7 @@ USER root
 
 # Εγκατάσταση απαραίτητων εργαλείων
 RUN apt-get update && apt-get install -y \
+    docker.io \
     python3 \
     python3-pip \
     python3-venv \
@@ -13,6 +14,9 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Προσθήκη του Jenkins user στο Docker group
+RUN usermod -aG docker jenkins
 
 # Εγκατάσταση Node.js 14.x από επίσημο tarball
 RUN curl -fsSL https://nodejs.org/dist/v14.21.3/node-v14.21.3-linux-x64.tar.xz | tar -xJ -C /usr/local --strip-components=1 && \
