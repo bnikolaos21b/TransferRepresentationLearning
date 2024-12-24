@@ -1,3 +1,7 @@
+sonar 
+sqa_6a6cfecece784145e35b99f4c51e46eaa957bf39
+
+
 1. Δημιουργία Fork στο GitHub
 Πήγαμε στο GitHub Repository και δημιουργήσαμε ένα fork.
 Κλωνοποιήσαμε το fork στο τοπικό μας σύστημα:

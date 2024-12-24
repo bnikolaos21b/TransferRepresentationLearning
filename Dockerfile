@@ -14,9 +14,6 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Υποβάθμιση του pip σε έκδοση 22.2.2 (προαιρετικό, αν χρειαστεί)
-# RUN pip3 install --upgrade pip==22.2.2
-
 # Εγκατάσταση Node.js 14.x από επίσημο tarball
 RUN curl -fsSL https://nodejs.org/dist/v14.21.3/node-v14.21.3-linux-x64.tar.xz | tar -xJ -C /usr/local --strip-components=1 && \
     ln -s /usr/local/bin/node /usr/bin/node && \

@@ -1,10 +1,12 @@
+version: '3.8'
+
 services:
   jenkins:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8090:8080"  # Χρησιμοποίησε μια διαφορετική εξωτερική θύρα για Jenkins
+      - "8090:8080"
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
@@ -33,6 +35,14 @@ services:
       - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonar
       - SONAR_JDBC_USERNAME=sonar
       - SONAR_JDBC_PASSWORD=sonar
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   db:
     image: postgres:12
@@ -44,6 +54,11 @@ services:
       - sonarqube_db:/var/lib/postgresql/data
     networks:
       - ci_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "sonar"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   trivy:
     image: aquasec/trivy:latest
